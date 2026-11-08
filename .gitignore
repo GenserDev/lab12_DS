@@ -1,0 +1,12 @@
+local/
+.venv/
+venv/
+__pycache__/
+*.pyc
+.DS_Store
+~$*
+*.tmp
+.~lock*
+*.pbix.bak
+powerbi/**/.pbi/localSettings.json
+powerbi/**/.pbi/cache.abf
