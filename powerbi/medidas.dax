@@ -1,0 +1,110 @@
+// Tablas calculadas (Modelado > Nueva tabla)
+
+SerieSeleccion = DATATABLE("Serie", STRING, "Orden", INTEGER, {{"Total de viajeros", 1}, {"Vía aérea", 2}})
+
+MetricaSeleccion = DATATABLE("Metrica", STRING, "Orden", INTEGER, {{"RMSE", 1}, {"MAE", 2}})
+
+
+// Medidas (tabla Medidas, Modelado > Nueva medida)
+
+Total viajeros = SUM(Viajeros[ViajerosTotal])
+
+Viajeros vía aérea = SUM(Viajeros[ViajerosAerea])
+
+Promedio mensual = AVERAGE(Viajeros[ViajerosTotal])
+
+Participación aérea (%) = DIVIDE([Viajeros vía aérea], [Total viajeros]) * 100
+
+Viajeros serie =
+SWITCH(
+    SELECTEDVALUE(SerieSeleccion[Serie], "Total de viajeros"),
+    "Vía aérea", [Viajeros vía aérea],
+    [Total viajeros]
+)
+
+Variación interanual (%) =
+AVERAGEX(
+    VALUES(Calendario[IndiceMes]),
+    VAR indice = Calendario[IndiceMes]
+    VAR actual = CALCULATE([Viajeros serie])
+    VAR anterior = CALCULATE([Viajeros serie], REMOVEFILTERS(Calendario), Calendario[IndiceMes] = indice - 12)
+    RETURN IF(NOT ISBLANK(anterior), DIVIDE(actual - anterior, anterior) * 100)
+)
+
+Color variación = IF([Variación interanual (%)] >= 0, "#264D3C", "#D5AD55")
+
+Mínimo del mes = MINX(VALUES(Calendario[Año]), [Viajeros serie])
+
+Mediana del mes = MEDIANX(VALUES(Calendario[Año]), [Viajeros serie])
+
+Máximo del mes = MAXX(VALUES(Calendario[Año]), [Viajeros serie])
+
+Primer cuartil del mes = PERCENTILEX.INC(VALUES(Calendario[Año]), [Viajeros serie], 0.25)
+
+Tercer cuartil del mes = PERCENTILEX.INC(VALUES(Calendario[Año]), [Viajeros serie], 0.75)
+
+Selección activa =
+VAR desde = MIN(Calendario[Año])
+VAR hasta = MAX(Calendario[Año])
+VAR periodo = IF(desde = hasta, FORMAT(desde, "0"), FORMAT(desde, "0") & " a " & FORMAT(hasta, "0"))
+RETURN
+    IF(
+        ISBLANK([Total viajeros]),
+        "No hay datos para la selección. Modifica los filtros o usa Restablecer vista.",
+        "Mostrando " & periodo & " · " & FORMAT(COUNTROWS(Viajeros), "0") & " meses · Serie destacada: " & SELECTEDVALUE(SerieSeleccion[Serie], "Total de viajeros")
+    )
+
+
+// Predicciones y métricas
+
+Observado (prueba) =
+SUMX(
+    VALUES(Calendario[Fecha]),
+    CALCULATE(AVERAGE(Predicciones[Observado]), REMOVEFILTERS(Modelos))
+)
+
+Predicho = IF(HASONEVALUE(Predicciones[Modelo]), SUM(Predicciones[Predicho]))
+
+Predicción SeasonalNaive = CALCULATE(SUM(Predicciones[Predicho]), KEEPFILTERS(Predicciones[Modelo] = "SeasonalNaive"))
+
+Predicción SES = CALCULATE(SUM(Predicciones[Predicho]), KEEPFILTERS(Predicciones[Modelo] = "SES"))
+
+Predicción Prophet = CALCULATE(SUM(Predicciones[Predicho]), KEEPFILTERS(Predicciones[Modelo] = "Prophet"))
+
+Error de predicción = IF(HASONEVALUE(Predicciones[Modelo]), SUM(Predicciones[Error]))
+
+MAE recalculado = AVERAGEX(Predicciones, ABS(Predicciones[Error]))
+
+RMSE recalculado = SQRT(AVERAGEX(Predicciones, Predicciones[Error] ^ 2))
+
+Error seleccionado =
+SWITCH(
+    SELECTEDVALUE(MetricaSeleccion[Metrica], "RMSE"),
+    "MAE", MIN(Metricas[MAE]),
+    MIN(Metricas[RMSE])
+)
+
+Modelo con menor error =
+VAR tabla = ADDCOLUMNS(SUMMARIZE(Metricas, Metricas[Modelo], Metricas[Laboratorio]), "Valor", [Error seleccionado])
+VAR mejor = TOPN(1, FILTER(tabla, NOT ISBLANK([Valor])), [Valor], ASC)
+RETURN MAXX(mejor, Metricas[Modelo]) & " (" & MAXX(mejor, Metricas[Laboratorio]) & ")"
+
+Mensaje mejor modelo =
+VAR metrica = SELECTEDVALUE(MetricaSeleccion[Metrica], "RMSE")
+VAR serie = SELECTEDVALUE(Metricas[SerieNombre])
+VAR tabla = ADDCOLUMNS(SUMMARIZE(Metricas, Metricas[Modelo]), "Valor", [Error seleccionado])
+VAR menor = MINX(FILTER(tabla, NOT ISBLANK([Valor])), [Valor])
+RETURN
+    IF(
+        ISBLANK(serie),
+        "Selecciona una sola serie para comparar sus modelos.",
+        "Menor " & metrica & " en " & serie & ": " & [Modelo con menor error] & " con " & FORMAT(menor, "#,0") & " viajeros de error."
+    )
+
+Mejor error del grupo = MIN(Metricas[RMSE])
+
+Modelo del mejor error =
+VAR menor = [Mejor error del grupo]
+RETURN MAXX(FILTER(Metricas, Metricas[RMSE] = menor), Metricas[Modelo])
+
+Distancia media = SUM(Similitud[DistanciaMedia])

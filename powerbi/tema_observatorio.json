@@ -1,0 +1,33 @@
+{
+  "name": "Observatorio de Turismo Sostenible",
+  "dataColors": ["#264D3C", "#D5AD55", "#91A88E", "#7A5C1E", "#5E7F5B", "#B8C9B5", "#E8DCC6"],
+  "background": "#FFFFFF",
+  "foreground": "#264D3C",
+  "tableAccent": "#D5AD55",
+  "good": "#264D3C",
+  "neutral": "#91A88E",
+  "bad": "#D5AD55",
+  "maximum": "#264D3C",
+  "center": "#91A88E",
+  "minimum": "#FFFFFF",
+  "textClasses": {
+    "title": { "fontFace": "Segoe UI Semibold", "fontSize": 14, "color": "#264D3C" },
+    "header": { "fontFace": "Segoe UI Semibold", "fontSize": 12, "color": "#264D3C" },
+    "label": { "fontFace": "Segoe UI", "fontSize": 10, "color": "#264D3C" },
+    "callout": { "fontFace": "Segoe UI Semibold", "fontSize": 26, "color": "#264D3C" }
+  },
+  "visualStyles": {
+    "*": {
+      "*": {
+        "border": [{ "show": true, "color": { "solid": { "color": "#E8DCC6" } }, "radius": 12 }],
+        "background": [{ "show": true, "color": { "solid": { "color": "#FFFFFF" } } }],
+        "valueAxis": [{ "gridlineColor": { "solid": { "color": "#E8DCC6" } } }]
+      }
+    },
+    "page": {
+      "*": {
+        "background": [{ "color": { "solid": { "color": "#FFFFFF" } }, "transparency": 0 }]
+      }
+    }
+  }
+}
