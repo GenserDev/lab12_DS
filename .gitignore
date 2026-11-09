@@ -10,3 +10,4 @@ __pycache__/
 *.pbix.bak
 powerbi/**/.pbi/localSettings.json
 powerbi/**/.pbi/cache.abf
+CHECKLIST.md
